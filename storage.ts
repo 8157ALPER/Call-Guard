@@ -6,6 +6,7 @@ import {
   type CallCenter,
   type EmergencyService,
   type SecurityQuestion,
+  type Device,
   type InsertContact,
   type InsertCall,
   type InsertSettings,
@@ -13,13 +14,14 @@ import {
   type InsertCallCenter,
   type InsertEmergencyService,
   type InsertSecurityQuestion
-} from "@shared/schema";
+} from "@workspace/db";
 import { db } from "./db";
-import { callCenters, calls, contacts, settings, userConsent, emergencyServices, securityQuestions } from "@shared/schema";
+import { callCenters, calls, contacts, settings, userConsent, emergencyServices, securityQuestions, devices } from "@workspace/db";
 
 // Default data for when database is not available
 const defaultSettings: Settings = {
   id: 1,
+  deviceId: 0,
   enableCallScreening: true,
   enableSmsAlerts: true,
   alertPhoneNumber: null,
@@ -41,44 +43,49 @@ const defaultSettings: Settings = {
 
 const defaultUserConsent: UserConsent = {
   id: 1,
+  deviceId: 0,
   acceptedTerms: false,
   acceptedPrivacyPolicy: false,
   acceptedDataCollection: false,
   timestamp: new Date(),
 };
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export interface IStorage {
+  createDevice(tokenHash: string): Promise<Device>;
+  getDeviceByTokenHash(tokenHash: string): Promise<Device | undefined>;
+  touchDevice(id: number): Promise<void>;
+
   // Contacts
-  getContacts(): Promise<Contact[]>;
-  getContact(id: number): Promise<Contact | undefined>;
-  createContact(contact: InsertContact): Promise<Contact>;
-  updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact>;
-  deleteContact(id: number): Promise<void>;
+  getContacts(deviceId?: number): Promise<Contact[]>;
+  getContact(id: number, deviceId?: number): Promise<Contact | undefined>;
+  createContact(contact: InsertContact, deviceId?: number): Promise<Contact>;
+  updateContact(id: number, contact: Partial<InsertContact>, deviceId?: number): Promise<Contact>;
+  deleteContact(id: number, deviceId?: number): Promise<void>;
   
   // Calls
-  getCalls(): Promise<Call[]>;
-  getCall(id: number): Promise<Call | undefined>;
-  createCall(call: InsertCall): Promise<Call>;
-  scanCall(id: number): Promise<Call>;
+  getCalls(deviceId?: number): Promise<Call[]>;
+  getCall(id: number, deviceId?: number): Promise<Call | undefined>;
+  createCall(call: InsertCall, deviceId?: number): Promise<Call>;
+  scanCall(id: number, deviceId?: number): Promise<Call>;
   
   // Settings
-  getSettings(): Promise<Settings>;
-  updateSettings(settings: Partial<InsertSettings>): Promise<Settings>;
+  getSettings(deviceId?: number): Promise<Settings>;
+  updateSettings(settings: Partial<InsertSettings>, deviceId?: number): Promise<Settings>;
   
   // User Consent
-  getUserConsent(): Promise<UserConsent>;
-  updateUserConsent(consent: Partial<InsertUserConsent>): Promise<UserConsent>;
-  hasAcceptedAllConsent(): Promise<boolean>;
+  getUserConsent(deviceId?: number): Promise<UserConsent>;
+  updateUserConsent(consent: Partial<InsertUserConsent>, deviceId?: number): Promise<UserConsent>;
+  hasAcceptedAllConsent(deviceId?: number): Promise<boolean>;
   
   // Call Centers
-  getCallCenters(): Promise<CallCenter[]>;
-  getCallCenter(id: number): Promise<CallCenter | undefined>;
-  getCallCenterByPhoneNumber(phoneNumber: string): Promise<CallCenter | undefined>;
-  createCallCenter(callCenter: InsertCallCenter): Promise<CallCenter>;
-  updateCallCenter(id: number, callCenter: Partial<InsertCallCenter>): Promise<CallCenter>;
-  deleteCallCenter(id: number): Promise<void>;
-  isPhoneNumberInCallCenterList(phoneNumber: string): Promise<boolean>;
+  getCallCenters(deviceId?: number): Promise<CallCenter[]>;
+  getCallCenter(id: number, deviceId?: number): Promise<CallCenter | undefined>;
+  getCallCenterByPhoneNumber(phoneNumber: string, deviceId?: number): Promise<CallCenter | undefined>;
+  createCallCenter(callCenter: InsertCallCenter, deviceId?: number): Promise<CallCenter>;
+  updateCallCenter(id: number, callCenter: Partial<InsertCallCenter>, deviceId?: number): Promise<CallCenter>;
+  deleteCallCenter(id: number, deviceId?: number): Promise<void>;
+  isPhoneNumberInCallCenterList(phoneNumber: string, deviceId?: number): Promise<boolean>;
   
   // Emergency Services
   getEmergencyServices(): Promise<EmergencyService[]>;
@@ -87,59 +94,74 @@ export interface IStorage {
   seedEmergencyServices(): Promise<void>;
   
   // Security Questions
-  getSecurityQuestions(): Promise<SecurityQuestion[]>;
-  getActiveSecurityQuestions(): Promise<SecurityQuestion[]>;
-  getSecurityQuestion(id: number): Promise<SecurityQuestion | undefined>;
-  createSecurityQuestion(question: InsertSecurityQuestion): Promise<SecurityQuestion>;
-  updateSecurityQuestion(id: number, question: Partial<InsertSecurityQuestion>): Promise<SecurityQuestion>;
-  deleteSecurityQuestion(id: number): Promise<void>;
-  verifySecurityAnswer(questionId: number, answer: string): Promise<boolean>;
+  getSecurityQuestions(deviceId?: number): Promise<SecurityQuestion[]>;
+  getActiveSecurityQuestions(deviceId?: number): Promise<SecurityQuestion[]>;
+  getSecurityQuestion(id: number, deviceId?: number): Promise<SecurityQuestion | undefined>;
+  createSecurityQuestion(question: InsertSecurityQuestion, deviceId?: number): Promise<SecurityQuestion>;
+  updateSecurityQuestion(id: number, question: Partial<InsertSecurityQuestion>, deviceId?: number): Promise<SecurityQuestion>;
+  deleteSecurityQuestion(id: number, deviceId?: number): Promise<void>;
+  verifySecurityAnswer(questionId: number, answer: string, deviceId?: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // CONTACTS
-  async getContacts(): Promise<Contact[]> {
-    return db.select().from(contacts);
+  async createDevice(tokenHash: string): Promise<Device> {
+    const [device] = await db.insert(devices).values({ tokenHash, lastSeenAt: new Date() }).returning();
+    return device;
   }
 
-  async getContact(id: number): Promise<Contact | undefined> {
-    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+  async getDeviceByTokenHash(tokenHash: string): Promise<Device | undefined> {
+    const [device] = await db.select().from(devices).where(eq(devices.tokenHash, tokenHash));
+    return device;
+  }
+
+  async touchDevice(id: number): Promise<void> {
+    await db.update(devices).set({ lastSeenAt: new Date() }).where(eq(devices.id, id));
+  }
+
+  // CONTACTS
+  async getContacts(deviceId = 0): Promise<Contact[]> {
+    return db.select().from(contacts).where(eq(contacts.deviceId, deviceId));
+  }
+
+  async getContact(id: number, deviceId = 0): Promise<Contact | undefined> {
+    const [contact] = await db.select().from(contacts).where(and(eq(contacts.id, id), eq(contacts.deviceId, deviceId)));
     return contact;
   }
 
-  async createContact(contact: InsertContact): Promise<Contact> {
-    const [newContact] = await db.insert(contacts).values(contact).returning();
+  async createContact(contact: InsertContact, deviceId = 0): Promise<Contact> {
+    const [newContact] = await db.insert(contacts).values({ ...contact, deviceId }).returning();
     return newContact;
   }
 
-  async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact> {
+  async updateContact(id: number, contact: Partial<InsertContact>, deviceId = 0): Promise<Contact> {
     const [updated] = await db
       .update(contacts)
       .set(contact)
-      .where(eq(contacts.id, id))
+      .where(and(eq(contacts.id, id), eq(contacts.deviceId, deviceId)))
       .returning();
     
     if (!updated) throw new Error("Contact not found");
     return updated;
   }
 
-  async deleteContact(id: number): Promise<void> {
-    await db.delete(contacts).where(eq(contacts.id, id));
+  async deleteContact(id: number, deviceId = 0): Promise<void> {
+    await db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.deviceId, deviceId)));
   }
 
   // CALLS
-  async getCalls(): Promise<Call[]> {
-    return db.select().from(calls);
+  async getCalls(deviceId = 0): Promise<Call[]> {
+    return db.select().from(calls).where(eq(calls.deviceId, deviceId));
   }
 
-  async getCall(id: number): Promise<Call | undefined> {
-    const [call] = await db.select().from(calls).where(eq(calls.id, id));
+  async getCall(id: number, deviceId = 0): Promise<Call | undefined> {
+    const [call] = await db.select().from(calls).where(and(eq(calls.id, id), eq(calls.deviceId, deviceId)));
     return call;
   }
 
-  async createCall(call: InsertCall): Promise<Call> {
+  async createCall(call: InsertCall, deviceId = 0): Promise<Call> {
     const [newCall] = await db.insert(calls).values({
       ...call,
+      deviceId,
       timestamp: new Date(),
       virusScanResult: call.virusScanResult || "clean"
     }).returning();
@@ -147,8 +169,8 @@ export class DatabaseStorage implements IStorage {
     return newCall;
   }
   
-  async scanCall(id: number): Promise<Call> {
-    const [call] = await db.select().from(calls).where(eq(calls.id, id));
+  async scanCall(id: number, deviceId = 0): Promise<Call> {
+    const [call] = await db.select().from(calls).where(and(eq(calls.id, id), eq(calls.deviceId, deviceId)));
     if (!call) throw new Error("Call not found");
     
     // Simulated virus scan using keyword detection in the transcript
@@ -161,7 +183,7 @@ export class DatabaseStorage implements IStorage {
       const [updatedCall] = await db
         .update(calls)
         .set({ virusScanResult: hasVirus ? "infected" : "clean" })
-        .where(eq(calls.id, id))
+        .where(and(eq(calls.id, id), eq(calls.deviceId, deviceId)))
         .returning();
       
       return updatedCall;
@@ -171,13 +193,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // SETTINGS
-  async getSettings(): Promise<Settings> {
+  async getSettings(deviceId = 0): Promise<Settings> {
     try {
-      const allSettings = await db.select().from(settings);
+      const allSettings = await db.select().from(settings).where(eq(settings.deviceId, deviceId));
       // Return the first settings object or create one if none exists
       if (allSettings.length === 0) {
         try {
           const [newSettings] = await db.insert(settings).values({
+            deviceId,
             enableCallScreening: true,
             enableSmsAlerts: true,
             aiSensitivity: "medium",
@@ -205,15 +228,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateSettings(settingsData: Partial<InsertSettings>): Promise<Settings> {
+  async updateSettings(settingsData: Partial<InsertSettings>, deviceId = 0): Promise<Settings> {
     // First, ensure we have settings to update
-    const existingSettings = await this.getSettings();
+    const existingSettings = await this.getSettings(deviceId);
     
     try {
       const [updated] = await db
         .update(settings)
         .set(settingsData)
-        .where(eq(settings.id, existingSettings.id))
+        .where(and(eq(settings.id, existingSettings.id), eq(settings.deviceId, deviceId)))
         .returning();
       
       return updated;
@@ -225,13 +248,14 @@ export class DatabaseStorage implements IStorage {
   }
   
   // USER CONSENT
-  async getUserConsent(): Promise<UserConsent> {
+  async getUserConsent(deviceId = 0): Promise<UserConsent> {
     try {
-      const allConsents = await db.select().from(userConsent);
+      const allConsents = await db.select().from(userConsent).where(eq(userConsent.deviceId, deviceId));
       // Return the first consent object or create one if none exists
       if (allConsents.length === 0) {
         try {
           const [newConsent] = await db.insert(userConsent).values({
+            deviceId,
             acceptedTerms: false,
             acceptedPrivacyPolicy: false,
             acceptedDataCollection: false,
@@ -250,9 +274,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async updateUserConsent(consent: Partial<InsertUserConsent>): Promise<UserConsent> {
+  async updateUserConsent(consent: Partial<InsertUserConsent>, deviceId = 0): Promise<UserConsent> {
     // First, ensure we have consent to update
-    const existingConsent = await this.getUserConsent();
+    const existingConsent = await this.getUserConsent(deviceId);
     
     try {
       const [updated] = await db
@@ -261,7 +285,7 @@ export class DatabaseStorage implements IStorage {
           ...consent,
           timestamp: new Date()
         })
-        .where(eq(userConsent.id, existingConsent.id))
+        .where(and(eq(userConsent.id, existingConsent.id), eq(userConsent.deviceId, deviceId)))
         .returning();
       
       return updated;
@@ -277,8 +301,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async hasAcceptedAllConsent(): Promise<boolean> {
-    const consent = await this.getUserConsent();
+  async hasAcceptedAllConsent(deviceId = 0): Promise<boolean> {
+    const consent = await this.getUserConsent(deviceId);
     return !!(
       consent.acceptedTerms &&
       consent.acceptedPrivacyPolicy &&
@@ -287,18 +311,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // CALL CENTERS
-  async getCallCenters(): Promise<CallCenter[]> {
+  async getCallCenters(deviceId = 0): Promise<CallCenter[]> {
     try {
-      return await db.select().from(callCenters);
+      return await db.select().from(callCenters).where(eq(callCenters.deviceId, deviceId));
     } catch (error) {
       console.warn("Error accessing call centers, returning empty list", error);
       return [];
     }
   }
 
-  async getCallCenter(id: number): Promise<CallCenter | undefined> {
+  async getCallCenter(id: number, deviceId = 0): Promise<CallCenter | undefined> {
     try {
-      const [callCenter] = await db.select().from(callCenters).where(eq(callCenters.id, id));
+      const [callCenter] = await db.select().from(callCenters).where(and(eq(callCenters.id, id), eq(callCenters.deviceId, deviceId)));
       return callCenter;
     } catch (error) {
       console.warn(`Error accessing call center with id ${id}`, error);
@@ -306,9 +330,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCallCenterByPhoneNumber(phoneNumber: string): Promise<CallCenter | undefined> {
+  async getCallCenterByPhoneNumber(phoneNumber: string, deviceId = 0): Promise<CallCenter | undefined> {
     try {
-      const [callCenter] = await db.select().from(callCenters).where(eq(callCenters.phoneNumber, phoneNumber));
+      const [callCenter] = await db.select().from(callCenters).where(and(eq(callCenters.phoneNumber, phoneNumber), eq(callCenters.deviceId, deviceId)));
       return callCenter;
     } catch (error) {
       console.warn(`Error accessing call center with phone number ${phoneNumber}`, error);
@@ -316,10 +340,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createCallCenter(callCenter: InsertCallCenter): Promise<CallCenter> {
+  async createCallCenter(callCenter: InsertCallCenter, deviceId = 0): Promise<CallCenter> {
     try {
       const [newCallCenter] = await db.insert(callCenters).values({
         ...callCenter,
+        deviceId,
         addedOn: new Date(),
         updatedOn: new Date()
       }).returning();
@@ -330,6 +355,7 @@ export class DatabaseStorage implements IStorage {
       // Create a fallback call center object with an id
       return {
         id: Math.floor(Math.random() * 1000) + 1,
+        deviceId,
         name: callCenter.name,
         companyName: callCenter.companyName,
         phoneNumber: callCenter.phoneNumber,
@@ -342,9 +368,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateCallCenter(id: number, callCenter: Partial<InsertCallCenter>): Promise<CallCenter> {
+  async updateCallCenter(id: number, callCenter: Partial<InsertCallCenter>, deviceId = 0): Promise<CallCenter> {
     try {
-      const existingCenter = await this.getCallCenter(id);
+      const existingCenter = await this.getCallCenter(id, deviceId);
       if (!existingCenter) {
         throw new Error("Call center not found");
       }
@@ -355,7 +381,7 @@ export class DatabaseStorage implements IStorage {
           ...callCenter,
           updatedOn: new Date()
         })
-        .where(eq(callCenters.id, id))
+        .where(and(eq(callCenters.id, id), eq(callCenters.deviceId, deviceId)))
         .returning();
       
       return updated;
@@ -363,7 +389,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`Could not update call center with id ${id}`, error);
       
       // If we found the call center but couldn't update it in the database
-      const existingCenter = await this.getCallCenter(id);
+      const existingCenter = await this.getCallCenter(id, deviceId);
       if (existingCenter) {
         return { 
           ...existingCenter, 
@@ -377,18 +403,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async deleteCallCenter(id: number): Promise<void> {
+  async deleteCallCenter(id: number, deviceId = 0): Promise<void> {
     try {
-      await db.delete(callCenters).where(eq(callCenters.id, id));
+      await db.delete(callCenters).where(and(eq(callCenters.id, id), eq(callCenters.deviceId, deviceId)));
     } catch (error) {
       console.warn(`Error deleting call center with id ${id}`, error);
       // Just log the error but don't throw, as delete operations should be idempotent
     }
   }
 
-  async isPhoneNumberInCallCenterList(phoneNumber: string): Promise<boolean> {
+  async isPhoneNumberInCallCenterList(phoneNumber: string, deviceId = 0): Promise<boolean> {
     try {
-      const callCenter = await this.getCallCenterByPhoneNumber(phoneNumber);
+      const callCenter = await this.getCallCenterByPhoneNumber(phoneNumber, deviceId);
       return !!callCenter && (!!callCenter.isVerified);
     } catch (error) {
       console.warn(`Error checking if phone number ${phoneNumber} is in call center list`, error);
@@ -427,27 +453,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   // SECURITY QUESTIONS
-  async getSecurityQuestions(): Promise<SecurityQuestion[]> {
+  async getSecurityQuestions(deviceId = 0): Promise<SecurityQuestion[]> {
     try {
-      return await db.select().from(securityQuestions);
+      return await db.select().from(securityQuestions).where(eq(securityQuestions.deviceId, deviceId));
     } catch (error) {
       console.warn("Error accessing security questions", error);
       return [];
     }
   }
 
-  async getActiveSecurityQuestions(): Promise<SecurityQuestion[]> {
+  async getActiveSecurityQuestions(deviceId = 0): Promise<SecurityQuestion[]> {
     try {
-      return await db.select().from(securityQuestions).where(eq(securityQuestions.isActive, true));
+      return await db.select().from(securityQuestions).where(and(eq(securityQuestions.isActive, true), eq(securityQuestions.deviceId, deviceId)));
     } catch (error) {
       console.warn("Error accessing active security questions", error);
       return [];
     }
   }
 
-  async getSecurityQuestion(id: number): Promise<SecurityQuestion | undefined> {
+  async getSecurityQuestion(id: number, deviceId = 0): Promise<SecurityQuestion | undefined> {
     try {
-      const [q] = await db.select().from(securityQuestions).where(eq(securityQuestions.id, id));
+      const [q] = await db.select().from(securityQuestions).where(and(eq(securityQuestions.id, id), eq(securityQuestions.deviceId, deviceId)));
       return q;
     } catch (error) {
       console.warn(`Error accessing security question ${id}`, error);
@@ -455,28 +481,28 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSecurityQuestion(question: InsertSecurityQuestion): Promise<SecurityQuestion> {
-    const [newQ] = await db.insert(securityQuestions).values(question).returning();
+  async createSecurityQuestion(question: InsertSecurityQuestion, deviceId = 0): Promise<SecurityQuestion> {
+    const [newQ] = await db.insert(securityQuestions).values({ ...question, deviceId }).returning();
     return newQ;
   }
 
-  async updateSecurityQuestion(id: number, question: Partial<InsertSecurityQuestion>): Promise<SecurityQuestion> {
+  async updateSecurityQuestion(id: number, question: Partial<InsertSecurityQuestion>, deviceId = 0): Promise<SecurityQuestion> {
     const [updated] = await db
       .update(securityQuestions)
       .set(question)
-      .where(eq(securityQuestions.id, id))
+      .where(and(eq(securityQuestions.id, id), eq(securityQuestions.deviceId, deviceId)))
       .returning();
     if (!updated) throw new Error("Security question not found");
     return updated;
   }
 
-  async deleteSecurityQuestion(id: number): Promise<void> {
-    await db.delete(securityQuestions).where(eq(securityQuestions.id, id));
+  async deleteSecurityQuestion(id: number, deviceId = 0): Promise<void> {
+    await db.delete(securityQuestions).where(and(eq(securityQuestions.id, id), eq(securityQuestions.deviceId, deviceId)));
   }
 
-  async verifySecurityAnswer(questionId: number, answer: string): Promise<boolean> {
+  async verifySecurityAnswer(questionId: number, answer: string, deviceId = 0): Promise<boolean> {
     try {
-      const q = await this.getSecurityQuestion(questionId);
+      const q = await this.getSecurityQuestion(questionId, deviceId);
       if (!q) return false;
       return q.answer.toLowerCase().trim() === answer.toLowerCase().trim();
     } catch (error) {

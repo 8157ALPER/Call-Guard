@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { storage } from "../storage";
+import { storage } from "../../storage";
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,

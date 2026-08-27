@@ -20,8 +20,6 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysis> {
   }
 
   try {
-    console.log("Analyzing transcript:", transcript);
-
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -50,15 +48,12 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysis> {
       response_format: { type: "json_object" }
     });
 
-    console.log("OpenAI response:", response);
-
     const content = response.choices[0]?.message?.content;
     if (!content) {
       throw new Error("No response content from OpenAI");
     }
 
     const result = JSON.parse(content) as CallAnalysis;
-    console.log("Parsed result:", result);
 
     return {
       risk: Math.min(Math.max(result.risk ?? 0, 0), 1),
@@ -70,9 +65,8 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysis> {
         description: result.mood?.description ?? "No mood analysis available"
       }
     };
-  } catch (error: unknown) {
-    console.error("OpenAI API error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    throw new Error("Failed to analyze call: " + errorMessage);
+  } catch {
+    console.error("OpenAI API call failed");
+    throw new Error("Failed to analyze call");
   }
 }

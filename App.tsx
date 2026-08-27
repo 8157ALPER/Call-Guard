@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation, useRoute } from "wouter";
+import { Switch, Route, useRoute, Router as WouterRouter } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -90,14 +90,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AccessibilityProvider>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-          <Navbar />
-          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            <Router />
-          </main>
-          {/* Mobile-friendly bottom spacing */}
-          <div className="h-8 sm:h-4"></div>
-        </div>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+            <Navbar />
+            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+              <Router />
+            </main>
+            {/* Mobile-friendly bottom spacing */}
+            <div className="h-8 sm:h-4"></div>
+          </div>
+        </WouterRouter>
         <Toaster />
       </AccessibilityProvider>
     </QueryClientProvider>
