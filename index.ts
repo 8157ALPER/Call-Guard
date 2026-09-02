@@ -1,25 +1,20 @@
-import app from "./app";
-import { logger } from "./lib/logger";
+// Export your models here. Add one export per file
+// export * from "./posts";
+//
+// Each model/table should ideally be split into different files.
+// Each model/table should define a Drizzle table, insert schema, and types:
+//
+//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
+//   import { createInsertSchema } from "drizzle-zod";
+//   import { z } from "zod/v4";
+//
+//   export const postsTable = pgTable("posts", {
+//     id: serial("id").primaryKey(),
+//     title: text("title").notNull(),
+//   });
+//
+//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
+//   export type InsertPost = z.infer<typeof insertPostSchema>;
+//   export type Post = typeof postsTable.$inferSelect;
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
-  logger.info({ port }, "Server listening");
-});
+export * from "./schema";
