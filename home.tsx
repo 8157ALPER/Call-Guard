@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
-import type { Settings, EmergencyService } from "@/lib/schema";
+import type { Settings, EmergencyService } from "@shared/schema";
 
 export default function Home() {
   const { data: settings } = useQuery<Settings>({
