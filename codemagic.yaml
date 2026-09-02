@@ -11,8 +11,7 @@ workflows:
     scripts:
       - name: Install workspace dependencies
         script: |
-          cd "$CM_BUILD_DIR"
-          pnpm --version
+          npm install --global pnpm
           pnpm install --frozen-lockfile
       - name: Set up Android signing
         script: |

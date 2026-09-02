@@ -35,7 +35,7 @@ export function CallCenterList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/call-centers/${id}`);
+      await apiRequest(`/api/call-centers/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/call-centers"] });
@@ -57,7 +57,7 @@ export function CallCenterList() {
 
   const toggleVerificationMutation = useMutation({
     mutationFn: async ({ id, isVerified }: { id: number; isVerified: boolean }) => {
-      await apiRequest("PATCH", `/api/call-centers/${id}`, { isVerified });
+      await apiRequest(`/api/call-centers/${id}`, "PATCH", { isVerified });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/call-centers"] });

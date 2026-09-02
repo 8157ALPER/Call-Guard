@@ -1,0 +1,59 @@
+Bu veriler kısa süreli olarak işleniyor mu?
+“Kısa süreli” işlenen veriler, yalnızca bellekte depolandıkları süre boyunca erişilebilen ve kullanılabilen verilerdir. Bu veriler sadece belirli bir isteği o anda yerine getirmek için gereken süre boyunca saklanır.
+
+Bu şekilde toplanan verilerin de açıklanması zorunludur ancak bunlar mağaza girişinizde kullanıcılara gösterilmez. Daha fazla bilgi
+
+
+Evet, toplanan bu veriler kısa süreli olarak işleniyor
+
+Hayır, toplanan bu veriler kısa süreli olarak işlenmiyor
+Bu veriler uygulamanızda zorunlu olarak toplanıyor mu yoksa kullanıcılara bu konuda seçenek sunuluyor mu? Daha fazla bilgi
+
+Veriler zorunlu olarak toplanır (veri toplama seçeneği, kullanıcılar tarafından devre dışı bırakılamaz)
+
+Kullanıcılar bu verilerin toplanıp toplanmayacağını seçebilir
+Veriler, mağaza girişinizde isteğe bağlı şeklinde gösterilir
+Bu kullanıcı verileri neden toplanıyor? Uygun olan tüm seçenekleri işaretleyin. Daha fazla bilgi edinin ve örneklere göz atın
+
+Uygulama işlevselliği
+Uygulamanızdaki özellikler için kullanılır. Örneğin, işlevleri etkinleştirmek veya kullanıcıların kimliğini doğrulamak için kullanılabilir. Daha fazla bilgi
+
+Analiz
+Kullanıcıların uygulamanızı nasıl kullandığı veya uygulamanızın performansı hakkında veri toplamak için kullanılır. Örneğin, belirli bir özelliğin kaç kullanıcı tarafından kullanıldığını görmek, uygulama sağlığını izlemek, hataları veya kilitlenmeleri teşhis edip düzeltmek ya da ileriye dönük performans iyileştirmeleri yapmak için kullanılabilir. Daha fazla bilgi
+
+Geliştirici iletişimleri
+Sizin hakkınızda veya uygulamanız hakkında haberler ya da bildirimler göndermek için kullanılır. Örneğin, önemli bir güvenlik güncellemesi ya da uygulamanızdaki yeni özellikler hakkında kullanıcıları bilgilendirmek için push bildirimi gönderilebilir. Daha fazla bilgi
+
+Reklam veya pazarlama
+Reklamları veya pazarlama iletişimlerini görüntülemek ya da hedeflemek veya reklam performansını ölçmek için kullanılır. Örneğin, uygulamanızda reklam gösterme, diğer ürün veya hizmetlerin tanıtımı için push bildirimleri gönderme ya da reklamcılık iş ortaklarıyla veri paylaşma. Daha fazla bilgi
+
+Sahtekarlığı önleme, güvenlik ve kanunlara uygunluk
+Sahtekarlık önleme, yasalara uygunluk sağlama veya güvenlik için kullanılır. Örneğin, olası sahtekarlık işlemlerinin tespit edilmesi için başarısız giriş denemeleri izlenebilir. Daha fazla bilgi
+
+Kişiselleştirme
+İçerik önerileri veya başka öneriler göstermek gibi yöntemlerle uygulamanızı özelleştirmek için kullanılır. Örneğin, kullanıcıların dinleme alışkanlıklarına göre şarkı listeleri önerilebilir veya bulundukları konuma ilişkin haberler gösterilebilir. Daha fazla bilgi
+
+Hesap yönetimi
+Kullanıcı hesaplarının oluşturulması veya yönetilmesi için kullanılır. Örneğin, kullanıcıların hesap oluşturmasını, hizmetlerinizde kullanılmak üzere sağladığınız hesaplara bilgi eklemesini, uygulamanıza giriş yapmasını veya kimlik bilgilerini doğrulamasını sağlamak için kullanılabilir. Daha fazla bilgi
+Bu kullanıcı verileri neden paylaşılıyor? Uygun olan tüm seçenekleri işaretleyin. Daha fazla bilgi edinin ve örneklere göz atın
+
+Uygulama işlevselliği
+Uygulamanızdaki özellikler için kullanılır. Örneğin, işlevleri etkinleştirmek veya kullanıcıların kimliğini doğrulamak için kullanılabilir. Daha fazla bilgi
+
+Analiz
+Kullanıcıların uygulamanızı nasıl kullandığı veya uygulamanızın performansı hakkında veri toplamak için kullanılır. Örneğin, belirli bir özelliğin kaç kullanıcı tarafından kullanıldığını görmek, uygulama sağlığını izlemek, hataları veya kilitlenmeleri teşhis edip düzeltmek ya da ileriye dönük performans iyileştirmeleri yapmak için kullanılabilir. Daha fazla bilgi
+
+Geliştirici iletişimleri
+Sizin hakkınızda veya uygulamanız hakkında haberler ya da bildirimler göndermek için kullanılır. Örneğin, önemli bir güvenlik güncellemesi ya da uygulamanızdaki yeni özellikler hakkında kullanıcıları bilgilendirmek için push bildirimi gönderilebilir. Daha fazla bilgi
+
+Reklam veya pazarlama
+Reklamları veya pazarlama iletişimlerini görüntülemek ya da hedeflemek veya reklam performansını ölçmek için kullanılır. Örneğin, uygulamanızda reklam gösterme, diğer ürün veya hizmetlerin tanıtımı için push bildirimleri gönderme ya da reklamcılık iş ortaklarıyla veri paylaşma. Daha fazla bilgi
+
+Sahtekarlığı önleme, güvenlik ve kanunlara uygunluk
+Sahtekarlık önleme, yasalara uygunluk sağlama veya güvenlik için kullanılır. Örneğin, olası sahtekarlık işlemlerinin tespit edilmesi için başarısız giriş denemeleri izlenebilir. Daha fazla bilgi
+
+Kişiselleştirme
+İçerik önerileri veya başka öneriler göstermek gibi yöntemlerle uygulamanızı özelleştirmek için kullanılır. Örneğin, kullanıcıların dinleme alışkanlıklarına göre şarkı listeleri önerilebilir veya bulundukları konuma ilişkin haberler gösterilebilir. Daha fazla bilgi
+
+Hesap yönetimi
+Kullanıcı hesaplarının oluşturulması veya yönetilmesi için kullanılır. Örneğin, kullanıcıların hesap oluşturmasını, hizmetlerinizde kullanılmak üzere sağladığınız hesaplara bilgi eklemesini, uygulamanıza giriş yapmasını veya kimlik bilgilerini doğrulamasını sağlamak için kullanılabilir.

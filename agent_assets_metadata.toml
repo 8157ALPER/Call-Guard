@@ -12,40 +12,5 @@ description = "GitHub'a aktarım için temizlenmiş Call Guardian kaynak kodu. n
 id = "0-mPNn44SIJTfEsxNfGMQ"
 uri = "file://call-guardian-github-upload.zip"
 type = "unspecified"
-title = "Call Guardian GitHub Upload Package"
-description = "Updated source package using CodeMagic personal-account environment-variable signing; no Team or Code Signing Identity required."
-
-[[outputs]]
-id = "evLeSjJfY32wl2WO05TcI"
-uri = "file://call-guardian-codemagic-personal-signing-update.zip"
-type = "unspecified"
-title = "Call Guardian CodeMagic Signing Update"
-description = "Only the four files needed to switch from Team signing identities to personal-account CM_* environment-variable signing."
-
-[[outputs]]
-id = "fYOISOWFhLRj7ucN-LPCZ"
-uri = "file://call-guardian-codemagic-pnpm-fix.zip"
-type = "unspecified"
-title = "Updated Call Guardian CodeMagic pnpm Fix"
-description = "Latest one-file codemagic.yaml update that enters CM_BUILD_DIR before pnpm runs, preventing Corepack from selecting Yarn from the builder home directory."
-
-[[outputs]]
-id = "d_mvwZ1lTAmTWYFrNdaSu"
-uri = "file://call-guardian-codemagic-complete-update.zip"
-type = "unspecified"
-title = "Latest Complete Call Guardian CodeMagic Update"
-description = "Includes the Corepack fix, personal-account signing workflow, Expo signing plugin registration, and the signing plugin."
-
-[[outputs]]
-id = "Gd7jCTxeu-qpL4mrTJosM"
-uri = "file://call-guardian-root-package-fix.zip"
-type = "unspecified"
-title = "Call Guardian Root package.json Fix"
-description = "One-file correction for the GitHub repository root package.json, synchronized with the existing pnpm-lock.yaml."
-
-[[outputs]]
-id = "8vwQu91hUQgt8OOB_jrKa"
-uri = "file://call-guardian-codemagic-path-fix.zip"
-type = "unspecified"
-title = "Call Guardian CodeMagic Path Fix"
-description = "One-file codemagic.yaml update using CM_BUILD_DIR in every independent build step."
+title = "Call Guardian GitHub upload package"
+description = "Complete source package for the GitHub repository, including the Expo mobile app, API, database schema, workspace files, lockfile, and codemagic.yaml. Secrets, dependencies, caches, and generated native folders are excluded."
