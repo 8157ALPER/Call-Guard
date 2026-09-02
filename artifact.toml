@@ -1,24 +1,17 @@
-kind = "mobile"
-previewPath = "/mobile/"
-title = "Call Guardian Mobile"
-description = "A senior-friendly mobile safety app that helps protect elderly people from phone fraud and scams through call screening, trusted contacts, consent controls, and family alerts."
+kind = "design"
+previewPath = "/__mockup"
+title = "Canvas"
 version = "1.0.0"
-id = "artifacts/call-guardian-mobile"
-router = "expo-domain"
+id = "XegfDyZt7HqfW2Bb8Ghoy"
 
 [[services]]
-name = "expo"
-ensurePreviewReachable = "/status"
-paths = [ "/mobile/" ]
-localPort = 25886
-
-[services.development]
-run = "pnpm --filter @workspace/call-guardian-mobile run dev"
-
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/call-guardian-mobile", "run", "build" ]
-run = [ "pnpm", "--filter", "@workspace/call-guardian-mobile", "run", "serve" ]
+localPort = 8081
+name = "Component Preview Server"
+paths = ["/__mockup"]
 
 [services.env]
-PORT = "25886"
-BASE_PATH = "/mobile/"
+PORT = "8081"
+BASE_PATH = "/__mockup"
+
+[services.development]
+run = "pnpm --filter @workspace/mockup-sandbox run dev"
