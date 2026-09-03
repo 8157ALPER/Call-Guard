@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Call, Settings } from "@shared/schema";
+import type { Call, Settings } from "@/lib/schema";
 
 // This is a test page that combines all main application features for testing
 export default function TestView() {

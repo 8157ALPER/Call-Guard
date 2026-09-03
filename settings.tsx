@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { insertSettingsSchema, insertSecurityQuestionSchema, type Settings, type InsertSettings, type EmergencyService, type InsertSecurityQuestion } from "@shared/schema";
+import { insertSettingsSchema, insertSecurityQuestionSchema, type Settings, type InsertSettings, type EmergencyService, type InsertSecurityQuestion } from "@/lib/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAccessibility } from "@/lib/accessibilityContext";
