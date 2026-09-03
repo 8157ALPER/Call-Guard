@@ -1,80 +1,45 @@
-# Call Guardian - AI-Powered Call Screening Application
+# [Project name]
 
-## Overview
+_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
 
-Call Guardian is an AI-powered application designed to protect elderly users from phone fraud through real-time conversation analysis and multi-channel alerting. The system uses OpenAI GPT-4o to analyze incoming calls for potential fraud indicators, maintains trusted contact lists, and provides immediate SMS notifications for suspicious activity. The application features mood tracking with emoji-based visualization to monitor emotional stress levels during calls, along with comprehensive accessibility features and customizable settings for AI sensitivity and alert preferences.
+## Run & Operate
 
-## User Preferences
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` — Postgres connection string
 
-Preferred communication style: Simple, everyday language.
+## Stack
 
-## System Architecture
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
-### Frontend Architecture
-- **Framework**: React.js with TypeScript for type safety and maintainability
-- **UI Components**: shadcn/ui component library built on Radix UI primitives for accessible, consistent interface elements
-- **Styling**: Tailwind CSS for utility-first styling with custom design tokens
-- **State Management**: TanStack Query for server state management, caching, and API synchronization
-- **Routing**: Wouter for lightweight client-side routing
-- **Build Tool**: Vite for fast development and optimized production builds
-- **Accessibility**: Comprehensive accessibility features including high contrast mode, large text options, and screen reader support
+## Where things live
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js for RESTful API endpoints
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations and schema management
-- **AI Integration**: OpenAI GPT-4o for real-time call transcript analysis and fraud detection
-- **Communication**: Twilio for SMS alerting and call handling capabilities
-- **Authentication**: Session-based authentication with consent management system
-- **Error Handling**: Graceful degradation when external services are unavailable
+_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
 
-### Data Storage Design
-- **Database Schema**: Structured tables for contacts, calls, settings, user consent, and call centers
-- **Contact Management**: Supports trusted contacts and emergency contacts with verification status
-- **Call Logging**: Comprehensive call history with AI analysis results, mood tracking, and suspicious activity flags
-- **Settings Storage**: User preferences for AI sensitivity, alert configurations, and accessibility options
-- **Consent Tracking**: GDPR-compliant consent management with timestamp tracking
+## Architecture decisions
 
-### Security and Privacy
-- **Data Protection**: User consent management for terms, privacy policy, and data collection
-- **API Security**: Environment variable management for sensitive credentials
-- **Error Isolation**: Graceful handling of external service failures
-- **Session Management**: Secure session handling with PostgreSQL session store
+_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
 
-### AI and Analysis Pipeline
-- **Fraud Detection**: Real-time analysis of call transcripts using GPT-4o with customizable sensitivity levels
-- **Mood Tracking**: Emotional stress level analysis with emoji visualization and numerical scoring
-- **Keyword Analysis**: Extraction and tracking of suspicious phrases and fraud indicators
-- **Risk Assessment**: Numerical risk scoring with configurable thresholds for automated alerting
+## Product
 
-### Accessibility Framework
-- **High Contrast Mode**: Complete color scheme override for visually impaired users
-- **Text Scaling**: Configurable text size multipliers for improved readability
-- **Keyboard Navigation**: Full keyboard accessibility support throughout the application
-- **Screen Reader Support**: Semantic HTML and ARIA labels for assistive technologies
-- **Focus Management**: Clear focus indicators and logical tab ordering
+_Describe the high-level user-facing capabilities of this app once they exist._
 
-## External Dependencies
+## User preferences
 
-### AI Services
-- **OpenAI GPT-4o**: Primary AI engine for call analysis, fraud detection, and mood assessment
-- **API Key Management**: Secure credential storage and fallback handling
+_Populate as you build — explicit user instructions worth remembering across sessions._
 
-### Communication Services
-- **Twilio**: SMS alerting system and incoming call handling
-- **Phone Number Management**: Configurable Twilio phone numbers for alerts
-- **Call Routing**: Interactive voice response for caller verification
+## Gotchas
 
-### Database Infrastructure
-- **Neon Database**: PostgreSQL hosting with connection pooling
-- **Drizzle Kit**: Database migration management and schema deployment
-- **Connection Fallback**: Mock data handling when database is unavailable
+_Populate as you build — sharp edges, "always run X before Y" rules._
 
-### Development and Deployment
-- **Replit Integration**: Development environment optimization with hot reloading
-- **Environment Configuration**: Comprehensive environment variable management
-- **Build Pipeline**: Optimized production builds with client/server separation
+## Pointers
 
-### Testing Framework
-- **Vitest**: Unit and integration testing for business logic
-- **API Testing**: Comprehensive test coverage for contact management and call analysis
-- **Mock Services**: Test doubles for external API dependencies
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
