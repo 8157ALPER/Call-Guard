@@ -1,19 +1,9 @@
-import { pgTable, text, serial, boolean, timestamp, json, integer, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
-
-export const devices = pgTable("devices", {
-  id: serial("id").primaryKey(),
-  tokenHash: text("token_hash").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
-}, (table) => [
-  uniqueIndex("devices_token_hash_unique").on(table.tokenHash),
-]);
+import { z } from "zod";
 
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   name: text("name").notNull(),
   phoneNumber: text("phone_number").notNull(),
   isEmergency: boolean("is_emergency").default(false),
@@ -22,7 +12,6 @@ export const contacts = pgTable("contacts", {
 
 export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   phoneNumber: text("phone_number").notNull(),
   timestamp: timestamp("timestamp").defaultNow(),
   duration: text("duration"),
@@ -42,7 +31,6 @@ export const calls = pgTable("calls", {
 
 export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   // Call screening settings
   enableCallScreening: boolean("enable_call_screening").default(true),
   enableSmsAlerts: boolean("enable_sms_alerts").default(true),
@@ -71,7 +59,6 @@ export const settings = pgTable("settings", {
 
 export const userConsent = pgTable("user_consent", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   acceptedTerms: boolean("accepted_terms").default(false),
   acceptedPrivacyPolicy: boolean("accepted_privacy_policy").default(false),
   acceptedDataCollection: boolean("accepted_data_collection").default(false),
@@ -80,7 +67,6 @@ export const userConsent = pgTable("user_consent", {
 
 export const callCenters = pgTable("call_centers", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   name: text("name").notNull(),
   companyName: text("company_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
@@ -103,14 +89,14 @@ export const emergencyServices = pgTable("emergency_services", {
   notes: text("notes"), // Additional info like "112 works on mobile"
 });
 
-export const insertContactSchema = createInsertSchema(contacts).omit({ deviceId: true }).extend({
+export const insertContactSchema = createInsertSchema(contacts).extend({
   name: z.string(),
   phoneNumber: z.string(),
   isEmergency: z.boolean().default(false),
   isTrusted: z.boolean().default(false),
 });
 
-export const insertCallSchema = createInsertSchema(calls).omit({ deviceId: true }).extend({
+export const insertCallSchema = createInsertSchema(calls).extend({
   phoneNumber: z.string(),
   duration: z.string().nullable(),
   analysis: z.object({
@@ -127,7 +113,7 @@ export const insertCallSchema = createInsertSchema(calls).omit({ deviceId: true 
   virusScanResult: z.string().default("clean"),
 });
 
-export const insertSettingsSchema = createInsertSchema(settings).omit({ deviceId: true }).extend({
+export const insertSettingsSchema = createInsertSchema(settings).extend({
   // Call screening settings
   enableCallScreening: z.boolean().default(true),
   enableSmsAlerts: z.boolean().default(true),
@@ -154,13 +140,13 @@ export const insertSettingsSchema = createInsertSchema(settings).omit({ deviceId
   enableEmergencyAlerts: z.boolean().default(true),
 });
 
-export const insertUserConsentSchema = createInsertSchema(userConsent).omit({ deviceId: true }).extend({
+export const insertUserConsentSchema = createInsertSchema(userConsent).extend({
   acceptedTerms: z.boolean().default(false),
   acceptedPrivacyPolicy: z.boolean().default(false),
   acceptedDataCollection: z.boolean().default(false),
 });
 
-export const insertCallCenterSchema = createInsertSchema(callCenters).omit({ deviceId: true }).extend({
+export const insertCallCenterSchema = createInsertSchema(callCenters).extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
   phoneNumber: z.string().min(6, "Phone number must be at least 6 characters"),
@@ -182,14 +168,13 @@ export const insertEmergencyServiceSchema = createInsertSchema(emergencyServices
 // Security questions - pre-registered by family members to verify callers
 export const securityQuestions = pgTable("security_questions", {
   id: serial("id").primaryKey(),
-  deviceId: integer("device_id").notNull().default(0),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
   hint: text("hint"),
   isActive: boolean("is_active").default(true),
 });
 
-export const insertSecurityQuestionSchema = createInsertSchema(securityQuestions).omit({ deviceId: true }).extend({
+export const insertSecurityQuestionSchema = createInsertSchema(securityQuestions).extend({
   question: z.string().min(5, "Question must be at least 5 characters"),
   answer: z.string().min(1, "Answer is required"),
   hint: z.string().nullable().optional(),
@@ -197,7 +182,6 @@ export const insertSecurityQuestionSchema = createInsertSchema(securityQuestions
 });
 
 export type SecurityQuestion = typeof securityQuestions.$inferSelect;
-export type Device = typeof devices.$inferSelect;
 export type InsertSecurityQuestion = z.infer<typeof insertSecurityQuestionSchema>;
 
 export type Contact = typeof contacts.$inferSelect;

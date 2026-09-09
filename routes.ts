@@ -1,6 +1,6 @@
-import type { Express, Response } from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "../storage";
+import { storage } from "./storage";
 import { 
   insertContactSchema, 
   insertCallSchema, 
@@ -8,70 +8,52 @@ import {
   insertUserConsentSchema,
   insertCallCenterSchema,
   insertSecurityQuestionSchema
-} from "@workspace/db";
-import { analyzeCall } from "../lib/lib/openai";
-import { sendAlert, handleIncomingCall, handleKeyPress, isSmsContentSuspicious } from "../lib/lib/twilio";
-import { generateReport, generateAndSendReport, scheduleReports } from "../lib/lib/reporting";
+} from "@shared/schema";
+import { analyzeCall } from "./lib/openai";
+import { sendAlert, handleIncomingCall, handleKeyPress, isSmsContentSuspicious } from "./lib/twilio";
+import { generateReport, generateAndSendReport, scheduleReports } from "./lib/reporting";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const deviceId = (res: Response) => {
-    const id = res.locals.guardianDeviceId;
-    if (typeof id !== "number") throw new Error("Call Guardian device context is missing.");
-    return id;
-  };
-
-  const requireConsent = async (res: Response) => {
-    if (await storage.hasAcceptedAllConsent(deviceId(res))) return true;
-    res.status(403).json({ message: "Consent is required before using protection data." });
-    return false;
-  };
-
   // Contacts
   app.get("/api/contacts", async (_req, res) => {
-    if (!(await requireConsent(res))) return;
-    const contacts = await storage.getContacts(deviceId(res));
+    const contacts = await storage.getContacts();
     res.json(contacts);
   });
 
   app.post("/api/contacts", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const result = insertContactSchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid contact data" });
       return;
     }
-    const contact = await storage.createContact(result.data, deviceId(res));
+    const contact = await storage.createContact(result.data);
     res.json(contact);
   });
 
   app.patch("/api/contacts/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     const result = insertContactSchema.partial().safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid contact data" });
       return;
     }
-    const contact = await storage.updateContact(id, result.data, deviceId(res));
+    const contact = await storage.updateContact(id, result.data);
     res.json(contact);
   });
 
   app.delete("/api/contacts/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
-    await storage.deleteContact(id, deviceId(res));
+    await storage.deleteContact(id);
     res.status(204).end();
   });
 
   // Calls
   app.get("/api/calls", async (_req, res) => {
-    if (!(await requireConsent(res))) return;
-    const calls = await storage.getCalls(deviceId(res));
+    const calls = await storage.getCalls();
     res.json(calls);
   });
 
   app.post("/api/calls/analyze", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const { transcript, phoneNumber } = req.body;
     if (!transcript || !phoneNumber) {
       res.status(400).json({ message: "Missing transcript or phone number" });
@@ -79,9 +61,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      console.log("Starting call analysis");
+      console.log("Starting call analysis for phone number:", phoneNumber);
       const analysis = await analyzeCall(transcript);
-      console.log("Call analysis completed");
+      console.log("Analysis completed:", analysis);
 
       const call = await storage.createCall({
         phoneNumber,
@@ -89,9 +71,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         analysis,
         isSuspicious: analysis.risk > 0.7,
         virusScanResult: "pending"
-      }, deviceId(res));
+      });
 
-      const settings = await storage.getSettings(deviceId(res));
+      const settings = await storage.getSettings();
       if (settings.enableSmsAlerts && analysis.risk > 0.7 && settings.alertPhoneNumber) {
         await sendAlert(
           settings.alertPhoneNumber,
@@ -100,36 +82,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(call);
-    } catch {
-      console.error("Call analysis failed");
-      res.status(500).json({ message: "Failed to analyze call" });
+    } catch (error: any) {
+      console.error("Error in call analysis:", error);
+      res.status(500).json({ 
+        message: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
   // Settings
   app.get("/api/settings", async (_req, res) => {
-    if (!(await requireConsent(res))) return;
-    const settings = await storage.getSettings(deviceId(res));
+    const settings = await storage.getSettings();
     res.json(settings);
   });
 
   app.patch("/api/settings", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const result = insertSettingsSchema.partial().safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid settings data" });
       return;
     }
-    const settings = await storage.updateSettings(result.data, deviceId(res));
+    const settings = await storage.updateSettings(result.data);
     res.json(settings);
   });
   
   // Virus Scanning
   app.post("/api/calls/:id/scan", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     try {
-      const scannedCall = await storage.scanCall(id, deviceId(res));
+      const scannedCall = await storage.scanCall(id);
       res.json(scannedCall);
     } catch (error: any) {
       res.status(404).json({ message: error.message });
@@ -138,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // User Consent
   app.get("/api/consent", async (_req, res) => {
-    const consent = await storage.getUserConsent(deviceId(res));
+    const consent = await storage.getUserConsent();
     res.json(consent);
   });
   
@@ -151,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     try {
-      const consent = await storage.updateUserConsent(result.data, deviceId(res));
+      const consent = await storage.updateUserConsent(result.data);
       console.log("Updated consent:", consent);
       res.json(consent);
     } catch (error) {
@@ -161,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/consent/status", async (_req, res) => {
-    const hasConsent = await storage.hasAcceptedAllConsent(deviceId(res));
+    const hasConsent = await storage.hasAcceptedAllConsent();
     console.log("Checking consent status:", hasConsent);
     res.json({ hasConsent });
   });
@@ -316,16 +298,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Reporting API Endpoints
   app.get("/api/reports/:period", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const period = req.params.period as 'weekly' | 'monthly';
     
     if (period !== 'weekly' && period !== 'monthly') {
-      res.status(400).json({ message: "Invalid period. Use 'weekly' or 'monthly'" });
-      return;
+      return res.status(400).json({ message: "Invalid period. Use 'weekly' or 'monthly'" });
     }
     
     try {
-      const report = await generateReport(period, deviceId(res));
+      const report = await generateReport(period);
       res.json(report);
     } catch (error: any) {
       console.error("Error generating report:", error);
@@ -334,16 +314,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/reports/:period/send", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const period = req.params.period as 'weekly' | 'monthly';
     
     if (period !== 'weekly' && period !== 'monthly') {
-      res.status(400).json({ message: "Invalid period. Use 'weekly' or 'monthly'" });
-      return;
+      return res.status(400).json({ message: "Invalid period. Use 'weekly' or 'monthly'" });
     }
     
     try {
-      const success = await generateAndSendReport(period, deviceId(res));
+      const success = await generateAndSendReport(period);
       if (success) {
         res.json({ message: `${period} report sent successfully` });
       } else {
@@ -357,19 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Call Centers
   app.get("/api/call-centers", async (_req, res) => {
-    if (!(await requireConsent(res))) return;
-    const callCenters = await storage.getCallCenters(deviceId(res));
+    const callCenters = await storage.getCallCenters();
     res.json(callCenters);
   });
 
   app.get("/api/call-centers/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     try {
-      const callCenter = await storage.getCallCenter(id, deviceId(res));
+      const callCenter = await storage.getCallCenter(id);
       if (!callCenter) {
-        res.status(404).json({ message: "Call center not found" });
-        return;
+        return res.status(404).json({ message: "Call center not found" });
       }
       res.json(callCenter);
     } catch (error: any) {
@@ -378,30 +353,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/call-centers", async (req, res) => {
-    if (!(await requireConsent(res))) return;
-    const result = insertCallCenterSchema.safeParse({
-      ...req.body,
-      companyName: req.body.companyName ?? req.body.name,
-    });
+    const result = insertCallCenterSchema.safeParse(req.body);
     if (!result.success) {
-      res.status(400).json({
+      return res.status(400).json({ 
         message: "Invalid call center data",
         errors: result.error.format() 
       });
-      return;
     }
     
     try {
       // Check if a call center with this phone number already exists
-      const existing = await storage.getCallCenterByPhoneNumber(result.data.phoneNumber, deviceId(res));
+      const existing = await storage.getCallCenterByPhoneNumber(result.data.phoneNumber);
       if (existing) {
-        res.status(409).json({
+        return res.status(409).json({ 
           message: "A call center with this phone number already exists" 
         });
-        return;
       }
       
-      const callCenter = await storage.createCallCenter(result.data, deviceId(res));
+      const callCenter = await storage.createCallCenter(result.data);
       res.status(201).json(callCenter);
     } catch (error: any) {
       console.error("Error creating call center:", error);
@@ -410,31 +379,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/call-centers/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     const result = insertCallCenterSchema.partial().safeParse(req.body);
     
     if (!result.success) {
-      res.status(400).json({
+      return res.status(400).json({ 
         message: "Invalid call center data",
         errors: result.error.format() 
       });
-      return;
     }
     
     try {
       // If phone number is being updated, check if it conflicts with another call center
       if (result.data.phoneNumber) {
-        const existingWithPhoneNumber = await storage.getCallCenterByPhoneNumber(result.data.phoneNumber, deviceId(res));
+        const existingWithPhoneNumber = await storage.getCallCenterByPhoneNumber(result.data.phoneNumber);
         if (existingWithPhoneNumber && existingWithPhoneNumber.id !== id) {
-          res.status(409).json({
+          return res.status(409).json({ 
             message: "Another call center with this phone number already exists" 
           });
-          return;
         }
       }
       
-      const callCenter = await storage.updateCallCenter(id, result.data, deviceId(res));
+      const callCenter = await storage.updateCallCenter(id, result.data);
       res.json(callCenter);
     } catch (error: any) {
       if (error.message === "Call center not found") {
@@ -447,10 +413,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/call-centers/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     try {
-      await storage.deleteCallCenter(id, deviceId(res));
+      await storage.deleteCallCenter(id);
       res.status(204).end();
     } catch (error: any) {
       console.error("Error deleting call center:", error);
@@ -459,16 +424,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/verify-phone-number/:phoneNumber", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const { phoneNumber } = req.params;
     
     if (!phoneNumber) {
-      res.status(400).json({ message: "Phone number is required" });
-      return;
+      return res.status(400).json({ message: "Phone number is required" });
     }
     
     try {
-      const isVerified = await storage.isPhoneNumberInCallCenterList(phoneNumber, deviceId(res));
+      const isVerified = await storage.isPhoneNumberInCallCenterList(phoneNumber);
       res.json({ isVerified });
     } catch (error: any) {
       console.error("Error verifying phone number:", error);
@@ -493,8 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const service = await storage.getEmergencyServiceByCountry(countryCode);
       if (!service) {
-        res.status(404).json({ message: "Emergency service not found for this country" });
-        return;
+        return res.status(404).json({ message: "Emergency service not found for this country" });
       }
       res.json(service);
     } catch (error: any) {
@@ -515,22 +477,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Alert authorities about fraud (SMS to emergency contacts and authorities)
   app.post("/api/emergency-services/alert-fraud", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const { countryCode, description, phoneNumber } = req.body;
     
     try {
-      const settings = await storage.getSettings(deviceId(res));
+      const settings = await storage.getSettings();
       
       if (!settings.enableEmergencyAlerts) {
-        res.status(400).json({ message: "Emergency alerts are disabled in settings" });
-        return;
+        return res.status(400).json({ message: "Emergency alerts are disabled in settings" });
       }
       
       // Get emergency service for the country
       const emergencyService = await storage.getEmergencyServiceByCountry(countryCode || settings.homeCountryCode || "US");
       
       // Get emergency contacts
-      const contacts = await storage.getContacts(deviceId(res));
+      const contacts = await storage.getContacts();
       const emergencyContacts = contacts.filter(c => c.isEmergency);
       
       // Send SMS alerts to emergency contacts
@@ -568,21 +528,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Security Questions
   app.get("/api/security-questions", async (_req, res) => {
-    if (!(await requireConsent(res))) return;
-    const questions = await storage.getSecurityQuestions(deviceId(res));
+    const questions = await storage.getSecurityQuestions();
     // Never return the answers to the frontend listing
     res.json(questions.map(q => ({ id: q.id, question: q.question, hint: q.hint, isActive: q.isActive })));
   });
 
   app.post("/api/security-questions", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const result = insertSecurityQuestionSchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid security question data", errors: result.error });
       return;
     }
     try {
-      const q = await storage.createSecurityQuestion(result.data, deviceId(res));
+      const q = await storage.createSecurityQuestion(result.data);
       res.json({ id: q.id, question: q.question, hint: q.hint, isActive: q.isActive });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -590,7 +548,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/security-questions/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     const result = insertSecurityQuestionSchema.partial().safeParse(req.body);
     if (!result.success) {
@@ -598,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     try {
-      const q = await storage.updateSecurityQuestion(id, result.data, deviceId(res));
+      const q = await storage.updateSecurityQuestion(id, result.data);
       res.json({ id: q.id, question: q.question, hint: q.hint, isActive: q.isActive });
     } catch (error: any) {
       res.status(404).json({ message: error.message });
@@ -606,22 +563,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/security-questions/:id", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
-    await storage.deleteSecurityQuestion(id, deviceId(res));
+    await storage.deleteSecurityQuestion(id);
     res.status(204).end();
   });
 
   // Verify a security answer (used internally / by Twilio webhook)
   app.post("/api/security-questions/:id/verify", async (req, res) => {
-    if (!(await requireConsent(res))) return;
     const id = parseInt(req.params.id);
     const { answer } = req.body;
     if (!answer) {
       res.status(400).json({ message: "Answer is required" });
       return;
     }
-    const correct = await storage.verifySecurityAnswer(id, answer, deviceId(res));
+    const correct = await storage.verifySecurityAnswer(id, answer);
     res.json({ correct });
   });
 
