@@ -1,32 +1,28 @@
-kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
-title = "API Server"
+kind = "web"
+previewPath = "/"
+title = "Call Guardian"
+description = "A call and message safety dashboard that analyzes suspicious communications, manages trusted contacts and call centers, and provides emergency protection settings."
 version = "1.0.0"
-id = "3B4_FFSkEVBkAeYMFRJ2e"
+id = "artifacts/call-guardian"
+router = "path"
 
 [[services]]
-localPort = 8080
-name = "API Server"
-paths = ["/api"]
+name = "web"
+paths = [ "/" ]
+localPort = 25244
 
 [services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+run = "pnpm --filter @workspace/call-guardian run dev"
 
 [services.production]
+build = [ "pnpm", "--filter", "@workspace/call-guardian", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/call-guardian/dist/public"
 
-[services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
 
-[services.production.build.env]
-NODE_ENV = "production"
-
-[services.production.run]
-# we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
-
-[services.production.run.env]
-PORT = "8080"
-NODE_ENV = "production"
-
-[services.production.health.startup]
-path = "/api/healthz"
+[services.env]
+PORT = "25244"
+BASE_PATH = "/"
