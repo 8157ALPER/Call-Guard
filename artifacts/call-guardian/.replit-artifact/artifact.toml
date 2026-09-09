@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Call Guardian"
+description = "A call and message safety dashboard that analyzes suspicious communications, manages trusted contacts and call centers, and provides emergency protection settings."
+version = "1.0.0"
+id = "artifacts/call-guardian"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25244
+
+[services.development]
+run = "pnpm --filter @workspace/call-guardian run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/call-guardian", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/call-guardian/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25244"
+BASE_PATH = "/"
