@@ -1,146 +1,107 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { Switch, Route, useLocation, useRoute } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
+import Navbar from "@/components/layout/navbar";
+import Home from "@/pages/home";
+import Contacts from "@/pages/contacts";
+import Settings from "@/pages/settings";
+import Consent from "@/pages/consent";
+import CallCenters from "@/pages/call-centers";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import NotFound from "@/pages/not-found";
+import { Redirect } from "./components/ui/redirect";
+import { useEffect } from "react";
 
-import { modules as discoveredModules } from "./.generated/mockup-components";
-
-type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
-
-function _resolveComponent(
-  mod: Record<string, unknown>,
-  name: string,
-): ComponentType | undefined {
-  const fns = Object.values(mod).filter(
-    (v) => typeof v === "function",
-  ) as ComponentType[];
-  return (
-    (mod.default as ComponentType) ||
-    (mod.Preview as ComponentType) ||
-    (mod[name] as ComponentType) ||
-    fns[fns.length - 1]
-  );
+interface ConsentProtectedRouteProps {
+  component: React.ComponentType<any>;
+  params?: any;
 }
 
-function PreviewRenderer({
-  componentPath,
-  modules,
-}: {
-  componentPath: string;
-  modules: ModuleMap;
-}) {
-  const [Component, setComponent] = useState<ComponentType | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setComponent(null);
-    setError(null);
-
-    async function loadComponent(): Promise<void> {
-      const key = `./components/mockups/${componentPath}.tsx`;
-      const loader = modules[key];
-      if (!loader) {
-        setError(`No component found at ${componentPath}.tsx`);
-        return;
-      }
-
-      try {
-        const mod = await loader();
-        if (cancelled) {
-          return;
-        }
-        const name = componentPath.split("/").pop()!;
-        const comp = _resolveComponent(mod, name);
-        if (!comp) {
-          setError(
-            `No exported React component found in ${componentPath}.tsx\n\nMake sure the file has at least one exported function component.`,
-          );
-          return;
-        }
-        setComponent(() => comp);
-      } catch (e) {
-        if (cancelled) {
-          return;
-        }
-
-        const message = e instanceof Error ? e.message : String(e);
-        setError(`Failed to load preview.\n${message}`);
-      }
-    }
-
-    void loadComponent();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [componentPath, modules]);
-
-  if (error) {
-    return (
-      <pre style={{ color: "red", padding: "2rem", fontFamily: "system-ui" }}>
-        {error}
-      </pre>
-    );
+function ConsentProtectedRoute({ component: Component, ...rest }: ConsentProtectedRouteProps) {
+  const [isConsentRoute] = useRoute("/consent");
+  
+  // Check if user has accepted all consent terms
+  const { data: consentStatus, isLoading } = useQuery<{ hasConsent: boolean }>({
+    queryKey: ["/api/consent/status"],
+    retry: false,
+  });
+  
+  // Emergency access for testing - check for bypass parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const bypassConsent = urlParams.get('bypass') === 'true';
+  
+  // If bypass is active, just render the component
+  if (bypassConsent) {
+    console.log("Bypassing consent check for testing purposes");
+    return <Component {...rest} />;
   }
-
-  if (!Component) return null;
-
-  return <Component />;
+  
+  // If loading, don't redirect yet
+  if (isLoading) {
+    return null;
+  }
+  
+  // If user hasn't given consent and is not already on the consent page, redirect to consent
+  if (!consentStatus?.hasConsent && !isConsentRoute) {
+    console.log("No consent yet, redirecting to consent page");
+    return <Redirect to="/consent" />;
+  }
+  
+  // If user has consented, render the requested component
+  return <Component {...rest} />;
 }
 
-function getBasePath(): string {
-  return import.meta.env.BASE_URL.replace(/\/$/, "");
-}
+// Import the test view
+import TestView from "@/pages/test-view";
 
-function getPreviewExamplePath(): string {
-  const basePath = getBasePath();
-  return `${basePath}/preview/ComponentName`;
-}
-
-function Gallery() {
+function Router() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-          Component Preview Server
-        </h1>
-        <p className="text-gray-500 mb-4">
-          This server renders individual components for the workspace canvas.
-        </p>
-        <p className="text-sm text-gray-400">
-          Access component previews at{" "}
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-            {getPreviewExamplePath()}
-          </code>
-        </p>
-      </div>
-    </div>
+    <Switch>
+      <Route path="/consent" component={Consent} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/test-view">
+        {(params) => <TestView {...params} />}
+      </Route>
+      <Route path="/">
+        {(params) => <ConsentProtectedRoute component={Home} {...params} />}
+      </Route>
+      <Route path="/contacts">
+        {(params) => <ConsentProtectedRoute component={Contacts} {...params} />}
+      </Route>
+      <Route path="/settings">
+        {(params) => <ConsentProtectedRoute component={Settings} {...params} />}
+      </Route>
+      <Route path="/call-centers">
+        {(params) => <ConsentProtectedRoute component={CallCenters} {...params} />}
+      </Route>
+      <Route>
+        {(params) => <NotFound {...params} />}
+      </Route>
+    </Switch>
   );
 }
 
-function getPreviewPath(): string | null {
-  const basePath = getBasePath();
-  const { pathname } = window.location;
-  const local =
-    basePath && pathname.startsWith(basePath)
-      ? pathname.slice(basePath.length) || "/"
-      : pathname;
-  const match = local.match(/^\/preview\/(.+)$/);
-  return match ? match[1] : null;
-}
+// Import the accessibility provider
+import { AccessibilityProvider } from "@/lib/accessibilityContext";
 
 function App() {
-  const previewPath = getPreviewPath();
-
-  if (previewPath) {
-    return (
-      <PreviewRenderer
-        componentPath={previewPath}
-        modules={discoveredModules}
-      />
-    );
-  }
-
-  return <Gallery />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AccessibilityProvider>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+          <Navbar />
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <Router />
+          </main>
+          {/* Mobile-friendly bottom spacing */}
+          <div className="h-8 sm:h-4"></div>
+        </div>
+        <Toaster />
+      </AccessibilityProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
