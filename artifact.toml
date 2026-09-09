@@ -1,28 +1,24 @@
-kind = "web"
-previewPath = "/"
-title = "Call Guardian"
-description = "A call and message safety dashboard that analyzes suspicious communications, manages trusted contacts and call centers, and provides emergency protection settings."
+kind = "mobile"
+previewPath = "/mobile/"
+title = "Call Guardian Mobile"
+description = "A senior-friendly mobile safety app that helps protect elderly people from phone fraud and scams through call screening, trusted contacts, consent controls, and family alerts."
 version = "1.0.0"
-id = "artifacts/call-guardian"
-router = "path"
+id = "artifacts/call-guardian-mobile"
+router = "expo-domain"
 
 [[services]]
-name = "web"
-paths = [ "/" ]
-localPort = 25244
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/mobile/" ]
+localPort = 25886
 
 [services.development]
-run = "pnpm --filter @workspace/call-guardian run dev"
+run = "pnpm --filter @workspace/call-guardian-mobile run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/call-guardian", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/call-guardian/dist/public"
-
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+build = [ "pnpm", "--filter", "@workspace/call-guardian-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/call-guardian-mobile", "run", "serve" ]
 
 [services.env]
-PORT = "25244"
-BASE_PATH = "/"
+PORT = "25886"
+BASE_PATH = "/mobile/"

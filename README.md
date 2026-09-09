@@ -16,21 +16,11 @@ The repository-root `codemagic.yaml` builds a signed Android App Bundle.
 
 Before running it in CodeMagic:
 
-1. Create or use a personal-account CodeMagic environment variable group called `call-guardian-signing`.
-2. Base64-encode the keystore file, then add it to that group as the secret variable `CM_KEYSTORE`.
-3. Add these signing variables to the same group as secrets: `CM_KEYSTORE_PASSWORD`, `CM_KEY_ALIAS`, and `CM_KEY_PASSWORD`.
-4. Add `CM_KEYSTORE_PATH` as a regular variable with the value `$CM_BUILD_DIR/call_guardian_upload_key.jks`.
-5. Create or use `call-guardian-production` and add `EXPO_PUBLIC_DOMAIN` with the public domain where the Call Guardian API is deployed, without a trailing slash.
-6. Run the `android-release` workflow.
-7. Download `app-release.aab` from the build artifacts, then upload it to Google Play Console.
-
-On Windows PowerShell, copy the keystore as base64 to the clipboard with:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("$HOME\call_guardian_upload_key.jks")) | Set-Clipboard
-```
-
-Paste the clipboard contents into the `CM_KEYSTORE` secret value. The keystore is decoded only on the temporary CodeMagic build machine. It is not uploaded to GitHub.
+1. Add your Android upload keystore in **CodeMagic → Teams → Code signing identities** with the reference name `call_guardian_keystore`.
+2. Create a CodeMagic environment variable group called `call-guardian-production`.
+3. In that group, add `EXPO_PUBLIC_DOMAIN` with the public domain where the Call Guardian API is deployed, without a trailing slash.
+4. Run the `android-release` workflow.
+5. Download `app-release.aab` from the build artifacts, then upload it to Google Play Console.
 
 Before distributing the Android build, publish the Call Guardian API from Replit. The Replit Publish flow compares the development schema with production and applies the reviewed additions for the anonymous-device tables and device-scoped records. Do not run database schema changes from CodeMagic.
 

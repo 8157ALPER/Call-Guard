@@ -36,8 +36,7 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "./plugins/withCallScreeningService",
-      "./plugins/withAndroidReleaseSigning"
+      "./plugins/withCallScreeningService"
     ],
     "experiments": {
       "typedRoutes": true,
