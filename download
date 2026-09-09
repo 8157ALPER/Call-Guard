@@ -1,41 +1,23 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+modules = ["nodejs-24", "postgresql-16"]
 
-# dependencies
-node_modules/
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
 
-# Native
-ios/
-android/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+[workflows]
+runButton = "Project"
 
-# Metro
-.metro-health-check*
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
 
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-.vercel
-
-.env
+[nix]
+channel = "stable-25_05"

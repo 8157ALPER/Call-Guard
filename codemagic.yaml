@@ -5,7 +5,8 @@ workflows:
     environment:
       groups:
         - call-guardian-production
-        - call-guardian-signing
+      android_signing:
+        - call_guardian_keystore
       vars:
         NODE_VERSION: 20
     scripts:
@@ -13,10 +14,6 @@ workflows:
         script: |
           npm install --global pnpm
           pnpm install --frozen-lockfile
-      - name: Set up Android signing
-        script: |
-          echo "$CM_KEYSTORE" | base64 --decode > "$CM_KEYSTORE_PATH"
-          chmod 600 "$CM_KEYSTORE_PATH"
       - name: Generate Android project with call-screening service
         script: |
           cd artifacts/call-guardian-mobile
