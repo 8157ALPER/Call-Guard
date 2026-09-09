@@ -12,10 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import type { Contact } from "@/lib/schema";
 
 export function ContactList() {
   const { toast } = useToast();
-  const { data: contacts, isLoading } = useQuery({
+  const { data: contacts, isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
 

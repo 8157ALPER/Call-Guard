@@ -1,5 +1,5 @@
-import { Call } from "../../shared/schema";
-import { storage } from "../storage";
+import { Call } from "@workspace/db";
+import { storage } from "../../storage";
 
 export interface Report {
   period: 'weekly' | 'monthly';
@@ -28,7 +28,7 @@ export interface Report {
 /**
  * Generates a statistical report for the specified time period
  */
-export async function generateReport(period: 'weekly' | 'monthly'): Promise<Report> {
+export async function generateReport(period: 'weekly' | 'monthly', deviceId = 0): Promise<Report> {
   const now = new Date();
   let startDate = new Date();
   
@@ -41,7 +41,7 @@ export async function generateReport(period: 'weekly' | 'monthly'): Promise<Repo
   }
   
   // Get all calls from storage
-  const allCalls = await storage.getCalls();
+  const allCalls = await storage.getCalls(deviceId);
   
   // Filter calls within the time range
   const callsInPeriod = allCalls.filter(call => {
@@ -145,7 +145,7 @@ export async function sendReportToRecipients(report: Report, recipients: string[
   try {
     // In a real implementation, this would integrate with an email service
     // For now, we'll log that we would send the email
-    console.log(`[Report] Would send ${report.period} report to ${recipients.join(', ')}`);
+    console.log(`[Report] Would send ${report.period} report to ${recipients.length} recipient(s)`);
     
     // Here you could implement actual email sending logic using a service like SendGrid, 
     // AWS SES, or Twilio SendGrid
@@ -198,9 +198,9 @@ export function scheduleReports(): void {
 /**
  * Manually generate and send a report immediately
  */
-export async function generateAndSendReport(period: 'weekly' | 'monthly'): Promise<boolean> {
+export async function generateAndSendReport(period: 'weekly' | 'monthly', deviceId = 0): Promise<boolean> {
   try {
-    const settings = await storage.getSettings();
+    const settings = await storage.getSettings(deviceId);
     
     if (!settings.reportRecipientEmails) {
       return false;
@@ -209,7 +209,7 @@ export async function generateAndSendReport(period: 'weekly' | 'monthly'): Promi
     const recipients = settings.reportRecipientEmails.split(',').map(email => email.trim());
     if (recipients.length === 0) return false;
     
-    const report = await generateReport(period);
+    const report = await generateReport(period, deviceId);
     return await sendReportToRecipients(report, recipients);
   } catch (error) {
     console.error('Failed to generate and send report:', error);
