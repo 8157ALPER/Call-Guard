@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from './queryClient';
-import type { Settings } from './schema';
+import { Settings } from '@shared/schema';
 
 // Define the accessibility context type
 type AccessibilityContextType = {

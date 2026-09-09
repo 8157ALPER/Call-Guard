@@ -24,10 +24,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, AlertTriangle, Phone, Check } from "lucide-react";
 import { useState } from "react";
-import type { Call } from "@/lib/schema";
 
 export function CallHistory() {
-  const { data: calls, isLoading } = useQuery<Call[]>({
+  const { data: calls, isLoading } = useQuery({
     queryKey: ["/api/calls"],
   });
 
@@ -81,7 +80,7 @@ export function CallHistory() {
                       {call.phoneNumber}
                     </CardTitle>
                     <CardDescription className="text-sm">
-                      {format(new Date(call.timestamp ?? 0), "PPp")}
+                      {format(new Date(call.timestamp), "PPp")}
                     </CardDescription>
                   </div>
                 </div>

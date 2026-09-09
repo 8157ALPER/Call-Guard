@@ -81,7 +81,7 @@ export function CallCenterForm({ isOpen, onClose, callCenter }: CallCenterFormPr
   // Define mutations
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const response = await apiRequest("POST", "/api/call-centers", data);
+      const response = await apiRequest("/api/call-centers", "POST", data);
       return response;
     },
     onSuccess: () => {
@@ -108,7 +108,7 @@ export function CallCenterForm({ isOpen, onClose, callCenter }: CallCenterFormPr
   const updateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       if (!callCenter) return null;
-      const response = await apiRequest("PATCH", `/api/call-centers/${callCenter.id}`, data);
+      const response = await apiRequest(`/api/call-centers/${callCenter.id}`, "PATCH", data);
       return response;
     },
     onSuccess: () => {
