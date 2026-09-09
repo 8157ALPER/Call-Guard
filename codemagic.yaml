@@ -5,22 +5,33 @@ workflows:
     environment:
       groups:
         - call-guardian-production
-      android_signing:
-        - call_guardian_keystore
+        - call-guardian-signing
       vars:
         NODE_VERSION: 20
     scripts:
       - name: Install workspace dependencies
         script: |
-          npm install --global pnpm
+          set -euo pipefail
+          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}"
+          export COREPACK_ENABLE_PROJECT_SPEC=0
+          test -f package.json
+          pnpm --version
           pnpm install --frozen-lockfile
+
+      - name: Set up Android signing
+        script: |
+          echo "$CM_KEYSTORE" | base64 --decode > "$CM_KEYSTORE_PATH"
+          chmod 600 "$CM_KEYSTORE_PATH"
+
       - name: Generate Android project with call-screening service
         script: |
-          cd artifacts/call-guardian-mobile
+          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}/artifacts/call-guardian-mobile"
           pnpm exec expo prebuild --platform android --non-interactive --no-install
+
       - name: Build signed Android App Bundle
         script: |
-          cd artifacts/call-guardian-mobile/android
+          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}/artifacts/call-guardian-mobile/android"
           ./gradlew bundleRelease
+
     artifacts:
       - artifacts/call-guardian-mobile/android/app/build/outputs/bundle/release/app-release.aab
