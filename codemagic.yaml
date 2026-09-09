@@ -11,11 +11,7 @@ workflows:
     scripts:
       - name: Install workspace dependencies
         script: |
-          set -euo pipefail
-          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}"
-          export COREPACK_ENABLE_PROJECT_SPEC=0
-          test -f package.json
-          pnpm --version
+          npm install --global pnpm
           pnpm install --frozen-lockfile
       - name: Set up Android signing
         script: |
@@ -23,11 +19,11 @@ workflows:
           chmod 600 "$CM_KEYSTORE_PATH"
       - name: Generate Android project with call-screening service
         script: |
-          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}/artifacts/call-guardian-mobile"
+          cd artifacts/call-guardian-mobile
           pnpm exec expo prebuild --platform android --non-interactive --no-install
       - name: Build signed Android App Bundle
         script: |
-          cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}/artifacts/call-guardian-mobile/android"
+          cd artifacts/call-guardian-mobile/android
           ./gradlew bundleRelease
     artifacts:
       - artifacts/call-guardian-mobile/android/app/build/outputs/bundle/release/app-release.aab
