@@ -19,7 +19,22 @@ workflows:
       - name: Set up Android signing
         script: |
           set -euo pipefail
-          printf '%s' "$CM_KEYSTORE" | tr -d '\r\n ' | base64 --decode > "$CM_KEYSTORE_PATH"
+          python3 - "$CM_KEYSTORE_PATH" <<'PY'
+          import base64
+          import binascii
+          import os
+          import sys
+
+          encoded = "".join(os.environ["CM_KEYSTORE"].split())
+          print(f"Stored keystore value length: {len(encoded)} characters")
+          encoded += "=" * (-len(encoded) % 4)
+          try:
+              decoded = base64.b64decode(encoded, validate=True)
+          except binascii.Error as error:
+              raise SystemExit(f"CM_KEYSTORE is not valid Base64: {error}")
+          with open(sys.argv[1], "wb") as keystore:
+              keystore.write(decoded)
+          PY
           chmod 600 "$CM_KEYSTORE_PATH"
           KEYSTORE_SIZE="$(wc -c < "$CM_KEYSTORE_PATH" | tr -d ' ')"
           echo "Decoded keystore size: ${KEYSTORE_SIZE} bytes"
