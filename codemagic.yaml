@@ -18,8 +18,18 @@ workflows:
           pnpm install --frozen-lockfile
       - name: Set up Android signing
         script: |
-          echo "$CM_KEYSTORE" | base64 --decode > "$CM_KEYSTORE_PATH"
+          set -euo pipefail
+          printf '%s' "$CM_KEYSTORE" | tr -d '\r\n ' | base64 --decode > "$CM_KEYSTORE_PATH"
           chmod 600 "$CM_KEYSTORE_PATH"
+          KEYSTORE_SIZE="$(wc -c < "$CM_KEYSTORE_PATH" | tr -d ' ')"
+          echo "Decoded keystore size: ${KEYSTORE_SIZE} bytes"
+          test "$KEYSTORE_SIZE" -gt 1000
+          keytool -list \
+            -storetype PKCS12 \
+            -keystore "$CM_KEYSTORE_PATH" \
+            -storepass "$CM_KEYSTORE_PASSWORD" \
+            >/dev/null
+          echo "Android keystore and store password verified."
       - name: Generate Android project with call-screening service
         script: |
           cd "${CM_BUILD_DIR:?CM_BUILD_DIR is not set}/artifacts/call-guardian-mobile"

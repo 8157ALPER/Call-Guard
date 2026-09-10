@@ -4,6 +4,7 @@ const signingBlock = `
     release {
       if (System.getenv("CI") == "true") {
         storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+        storeType "PKCS12"
         storePassword System.getenv("CM_KEYSTORE_PASSWORD")
         keyAlias System.getenv("CM_KEY_ALIAS")
         keyPassword System.getenv("CM_KEY_PASSWORD")
@@ -28,6 +29,16 @@ function withAndroidReleaseSigning(config) {
         contents.slice(0, openingBraceIndex + 1) +
         signingBlock +
         contents.slice(openingBraceIndex + 1);
+    }
+
+    if (
+      gradleConfig.modResults.contents.includes('CM_KEYSTORE_PATH') &&
+      !gradleConfig.modResults.contents.includes('storeType "PKCS12"')
+    ) {
+      gradleConfig.modResults.contents = gradleConfig.modResults.contents.replace(
+        'storeFile file(System.getenv("CM_KEYSTORE_PATH"))',
+        'storeFile file(System.getenv("CM_KEYSTORE_PATH"))\n        storeType "PKCS12"',
+      );
     }
 
     const updatedContents = gradleConfig.modResults.contents;
